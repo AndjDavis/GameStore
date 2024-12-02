@@ -18,45 +18,69 @@ List<GameDto> games =
 app.MapGet("games", () => games);
 
 // GET /games/1
-app.MapGet("games/{id}", (int id) => games.Find(game => game.Id == id))
+app.MapGet(
+        "games/{id}",
+        (int id) =>
+        {
+            GameDto? game = games.Find(game => game.Id == id);
+
+            return game is null ? Results.NotFound() : Results.Ok(game);
+        }
+    )
     .WithName(GetGameEndPoint);
 
 // POST /games
 app.MapPost(
     "games",
     (CreateGameDto newGame) =>
-{
-    GameDto game = new(
-        games.Count + 1,
-        newGame.Name,
-        newGame.Genre,
-        newGame.Price,
-        newGame.ReleaseDate
-    );
+    {
+        GameDto game = new(
+            games.Count + 1,
+            newGame.Name,
+            newGame.Genre,
+            newGame.Price,
+            newGame.ReleaseDate
+        );
 
-    games.Add(game);
+        games.Add(game);
 
-    // return result to client
-
-    return Results.CreatedAtRoute(GetGameEndPoint, new { id = game.Id }, game);
-}
+        // return result to client
+        return Results.CreatedAtRoute(GetGameEndPoint, new { id = game.Id }, game);
+    }
 );
 
 // PUT /games
-app.MapPut("games/{id}", (int id, UpdateGameDto updatedGame) =>
-{
-    var index = games.FindIndex(game => game.Id == id);
+app.MapPut(
+    "games/{id}",
+    (int id, UpdateGameDto updatedGame) =>
+    {
+        var index = games.FindIndex(game => game.Id == id);
 
-    games[index] = new GameDto(
-        id,
-        updatedGame.Name,
-        updatedGame.Genre,
-        updatedGame.Price,
-        updatedGame.ReleaseDate
-    );
+        if (index == -1)
+        {
+            return Results.NotFound();
+        }
 
-    return Results.NoContent();
-}
+        games[index] = new GameDto(
+            id,
+            updatedGame.Name,
+            updatedGame.Genre,
+            updatedGame.Price,
+            updatedGame.ReleaseDate
+        );
+
+        return Results.NoContent();
+    }
+);
+
+// DELETE /games/{id}
+app.MapDelete(
+    "games/{id}",
+    (int id) =>
+    {
+        games.RemoveAll(game => game.Id == id);
+        return Results.NoContent();
+    }
 );
 
 app.Run();
