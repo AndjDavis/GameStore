@@ -397,3 +397,6 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml%
 GameStore.Api/games.http
+
+*.db
+*.db-*
