@@ -8,7 +8,7 @@ using GameStore.Api.Mapping;
 public static class GamesEndpoints
 {
     const string GetGameEndPoint = "GetGame";
-    private static readonly List<GameDto> games =
+    private static readonly List<GameSummaryDto> games =
     [
         new(1, "Street Fighter II", "Fighting", 19.99M, new DateOnly(1992, 7, 15)),
         new(2, "Final Fantasy XIV", "Roleplaying", 59.99M, new DateOnly(2010, 9, 30)),
@@ -27,11 +27,10 @@ public static class GamesEndpoints
         group
             .MapGet(
                 "/{id}",
-                (int id) =>
+                (int id, GameStoreContext dbContext) =>
                 {
-                    GameDto? game = games.Find(game => game.Id == id);
-
-                    return game is null ? Results.NotFound() : Results.Ok(game);
+                    Game? game = dbContext.Games.Find(id);
+                    return game is null ? Results.NotFound() : Results.Ok(game.ToGameDetailsDto());
                 }
             )
             .WithName(GetGameEndPoint);
@@ -47,9 +46,11 @@ public static class GamesEndpoints
                 dbContext.Games.Add(game);
                 dbContext.SaveChanges();
 
-                GameDto gameDto = game.ToDto();
-
-                return Results.CreatedAtRoute(GetGameEndPoint, new { id = gameDto.Id }, gameDto);
+                return Results.CreatedAtRoute(
+                    GetGameEndPoint,
+                    new { id = game.Id },
+                    game.ToGameDetailsDto()
+                );
             }
         );
 
